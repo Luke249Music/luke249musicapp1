@@ -6,15 +6,15 @@ import { CalendarPlus, Calendar, Clock, Edit2, XCircle } from 'lucide-react';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
-  const { consultations } = useScheduling();
+  const { userBookings } = useScheduling();
 
   if (!user) {
     return <Navigate to="/" />;
   }
 
   // Find consultations for the logged-in user that are either Confirmed or Pending
-  const userConsultations = consultations.filter(c => 
-    c.email === user.email && (c.status === 'Confirmed' || c.status === 'Pending')
+  const userConsultations = userBookings.filter(c => 
+    c.status === 'Confirmed' || c.status === 'Pending'
   );
 
   return (
@@ -51,7 +51,9 @@ export const DashboardPage = () => {
                     </div>
                     <div>
                       <div className="font-bold text-lg">{session.type === 'emergency' ? 'Emergency' : 'Regular'} Consultation</div>
-                      <div className="text-sm text-gray-500">{session.date} at {session.time}</div>
+                      <div className="text-sm text-gray-500">
+                        {session.slotId?.split('_')[0] || 'TBD'} at {session.slotId?.split('_')[1] || 'TBD'}
+                      </div>
                     </div>
                   </div>
                   <span className={`text-xs px-3 py-1 rounded-full font-medium ${

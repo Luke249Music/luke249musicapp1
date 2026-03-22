@@ -82,4 +82,32 @@ const firebaseConfig = \{\
 // Initialize Firebase\
 const app = initializeApp(firebaseConfig);\
 \
+
+\f1\b Database Logic and Roles\
+
+\f0\b0 \
+Update the app to use real Firestore database logic based on the following rules. Do not set roles automatically upon registration!\
+Do not use collection groups.\
+\
+USERS:\
+Every time a user registers or schedules a session anonymously, add them to the Firestore 'users' collection with all the data they entered or the data from Google Auth.\
+\
+When a user goes to schedule a session, the intervals are pulled directly from the main '/schedule' collection. A time-slot can only be booked once. The time-slots show in the current user's time zone, but they can change the time zone at the top at any time.\
+\
+Every time a user makes a payment (for now it's purely demo), save all payment details in the private '/users/\{userId\}/payments' collection.\
+\
+ADMINS:\
+When a user signs in and their role is set to 'admin', they are directed to the admin view. When they create/edit their schedule and save it - update the main '/schedule' collection. Admins create a schedule in their time zone detected automatically. They can change the time zone at the top.\
+\
+All bookings the admin sees in their dashboard are pulled from the '/users/\{userId\}/bookings' collection. Admins can click to view each booking with a link to the client the session belongs to, payment information with the link to the payment, reschedule/cancel appointments, and also add new sessions manually (which updates the collection).\
+\
+In the clients tab, the admin can see all clients from the '/users' collection, except the ones whose role is admin. When an admin clicks on the client card, they can view all sessions the user scheduled with links to their schedules and payments.\
+\
+In the payments tab, the admin can see all payments the users made from '/users/\{userId\}/payments' with links and information on the client and their booking.\
+\
+Remember, Admins have to approve sessions they are in pending status until admin approves, updates, or rejects the session. \
+\
+Ask questions do not assume or make up on rules.\
+\
+\
 }

@@ -1,14 +1,24 @@
 import { useState } from 'react';
 import { useScheduling } from '../../context/SchedulingContext';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addDays, isBefore, startOfDay } from 'date-fns';
-import { ChevronLeft, ChevronRight, CalendarOff } from 'lucide-react';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, addDays, isBefore, startOfDay, parse } from 'date-fns';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { db } from '../../firebase';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+
+const commonHours = ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM'];
 
 export const AvailabilityPage = () => {
-  const { blockedDates, toggleBlockedDate, toggleDayOfWeek } = useScheduling();
+  const { slots } = useScheduling();
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+
+  const getSlotsForDate = (dateString: string) => {
+    return slots.filter(s => s.date === dateString);
+  };
 
   const renderCells = () => {
     const monthStart = startOfMonth(currentDate);
@@ -26,25 +36,32 @@ export const AvailabilityPage = () => {
       for (let i = 0; i < 7; i++) {
         formattedDate = format(day, "d");
         const dateString = format(day, 'yyyy-MM-dd');
-        const isBlocked = blockedDates.includes(dateString);
         const isPastDate = isBefore(day, today);
         const isCurrentMonth = isSameMonth(day, monthStart);
+        
+        const daySlots = getSlotsForDate(dateString);
+        const activeCount = daySlots.length;
 
+        const cloneDay = day; // capture for onClick closures
+        
         days.push(
           <div className="p-1" key={day.toString()}>
             <button
               disabled={isPastDate || !isCurrentMonth}
-              onClick={() => toggleBlockedDate(dateString)}
-              className={`w-full aspect-square flex flex-col items-center justify-center rounded-2xl text-sm font-medium transition-all
-                ${!isCurrentMonth ? "opacity-20 cursor-default" : isPastDate ? "cursor-not-allowed opacity-50 bg-gray-50 dark:bg-gray-800/50" : "hover:scale-105 cursor-pointer"}
-                ${isBlocked 
-                  ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800" 
-                  : !isPastDate && isCurrentMonth ? "bg-white dark:bg-[#1a1d2d] border border-gray-100 dark:border-gray-800 shadow-sm hover:border-pink-300 dark:hover:border-pink-700" : ""
-                }
+              onClick={() => {
+                setSelectedDate(cloneDay);
+              }}
+              className={`relative w-full aspect-square flex flex-col items-center justify-center rounded-2xl text-sm font-medium transition-all
+                ${!isCurrentMonth ? "opacity-20 cursor-default" : isPastDate ? "cursor-not-allowed opacity-50 bg-gray-50 dark:bg-gray-800/50" : "hover:scale-105 cursor-pointer bg-white dark:bg-[#1a1d2d] border border-gray-100 dark:border-gray-800 shadow-sm hover:border-pink-300 dark:hover:border-pink-700"}
+                ${activeCount > 0 ? 'bg-pink-50 dark:bg-pink-900/10' : ''}
               `}
             >
               <span>{formattedDate}</span>
-              {isBlocked && <span className="text-[10px] mt-1 font-bold">BLOCKED</span>}
+              {!isPastDate && isCurrentMonth && (
+                <span className={`text-[10px] mt-1 font-bold ${activeCount > 0 ? 'text-pink-600' : 'text-gray-400'}`}>
+                  {activeCount} Slots
+                </span>
+              )}
             </button>
           </div>
         );
@@ -56,26 +73,47 @@ export const AvailabilityPage = () => {
     return <div>{rows}</div>;
   };
 
+  const toggleSlot = async (time: string, isActive: boolean, slotId: string, isBooked: boolean) => {
+    if (!selectedDate) return;
+    const dateString = format(selectedDate, 'yyyy-MM-dd');
+    const newSlotId = `${dateString}_${time.replace(' ', '')}`;
+
+    if (isActive) {
+      if (isBooked) return; // Cannot delete booked slot easily
+      // delete
+      try {
+        await deleteDoc(doc(db, 'schedule', slotId || newSlotId));
+      } catch (e) {
+        console.error("error deleting slot", e);
+      }
+    } else {
+      // create
+      // Rough parse of start and end time in local browser time for now
+      const parsedTime = parse(`${dateString} ${time}`, 'yyyy-MM-dd hh:mm a', new Date());
+      const endTime = addMonths(parsedTime, 0); // just hacky add 1 hour
+      endTime.setHours(endTime.getHours() + 1);
+
+      try {
+        await setDoc(doc(db, 'schedule', newSlotId), {
+          date: dateString,
+          startTime: parsedTime.toISOString(),
+          endTime: endTime.toISOString(),
+          booked: false,
+          bookedBy: null
+        });
+      } catch (e) {
+         console.error("error creating slot", e);
+      }
+    }
+  };
+
+
   return (
     <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8 animate-in fade-in">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Availability</h1>
-        <p className="text-gray-500">Click on dates to block them out from your scheduling calendar</p>
-      </div>
-
-      <div className="mb-8 glass-panel p-6 rounded-3xl">
-        <h3 className="text-lg font-bold mb-4">Block Entire Days for {currentDate.getFullYear()}</h3>
-        <p className="text-gray-500 text-sm mb-4">Click a day to block or unblock every instance of it for the currently viewed calendar year.</p>
-        <div className="flex flex-wrap gap-3">
-          {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((dayFull, index) => (
-            <button
-              key={dayFull}
-              onClick={() => toggleDayOfWeek(index, currentDate.getFullYear())}
-              className="px-4 py-2 bg-white dark:bg-[#1a1d2d] border border-gray-200 dark:border-gray-800 hover:border-pink-300 dark:hover:border-pink-700 hover:text-pink-600 rounded-xl transition-all cursor-pointer shadow-sm text-sm font-medium"
-            >
-              Block {dayFull}s
-            </button>
-          ))}
+      <div className="mb-8 flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">Availability Schedule</h1>
+          <p className="text-gray-500">Click a day to generate and manage specific available booking slots.</p>
         </div>
       </div>
 
@@ -92,11 +130,6 @@ export const AvailabilityPage = () => {
               <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           </div>
-
-          <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-2 rounded-xl text-sm font-medium">
-            <CalendarOff className="w-4 h-4" />
-            {blockedDates.length} Dates Blocked
-          </div>
         </div>
 
         <div className="grid grid-cols-7 mb-4">
@@ -112,6 +145,49 @@ export const AvailabilityPage = () => {
 
         {renderCells()}
       </div>
+
+      {selectedDate && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-panel p-8 rounded-3xl w-full max-w-md bg-white dark:bg-[#1a1d2d] animate-in zoom-in-95 duration-200">
+             <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Slots for {format(selectedDate, 'MMM do, yyyy')}</h2>
+                <button onClick={() => setSelectedDate(null)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                  <X className="w-5 h-5" />
+                </button>
+             </div>
+             
+             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                {commonHours.map(time => {
+                  const dateString = format(selectedDate, 'yyyy-MM-dd');
+                  const targetId = `${dateString}_${time.replace(' ', '')}`;
+                  const existingSlot = slots.find(s => s.id === targetId);
+                  const isActive = !!existingSlot;
+                  const isBooked = existingSlot?.booked || false;
+
+                  return (
+                    <div key={time} className={`flex justify-between items-center p-4 rounded-xl border ${isActive ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/10' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#0f111a]'} transition-all`}>
+                       <div>
+                         <span className="font-bold text-lg">{time}</span>
+                         {isActive && <p className={`text-xs font-medium mt-1 uppercase ${isBooked ? 'text-blue-500' : 'text-pink-500'}`}>{isBooked ? 'Booked' : 'Available'}</p>}
+                       </div>
+                       
+                       <button 
+                         disabled={isBooked}
+                         onClick={() => toggleSlot(time, isActive, targetId, isBooked)}
+                         className={`px-4 py-2 rounded-lg font-bold text-sm cursor-pointer transition-colors ${
+                           isBooked ? 'opacity-50 cursor-not-allowed bg-gray-200 text-gray-500' :
+                           isActive ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-pink-100 text-pink-600 hover:bg-pink-200'
+                         }`}
+                       >
+                         {isBooked ? 'LOCKED' : isActive ? 'Remove' : 'Add Slot'}
+                       </button>
+                    </div>
+                  );
+                })}
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

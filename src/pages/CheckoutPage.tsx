@@ -6,12 +6,12 @@ import { CreditCard, ShieldCheck } from 'lucide-react';
 export const CheckoutPage = () => {
   const [params] = useSearchParams();
   const id = params.get('id');
-  const { consultations, confirmPayment } = useScheduling();
+  const { userBookings, confirmPayment } = useScheduling();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const consultation = consultations.find(c => c.id === id);
+  const consultation = userBookings.find(c => c.id === id);
 
   if (!consultation || consultation.status === 'Confirmed') {
     return <Navigate to="/" />;
@@ -46,7 +46,9 @@ export const CheckoutPage = () => {
           </div>
           <div className="flex justify-between py-2 border-b border-gray-200 dark:border-gray-800">
             <span className="text-gray-600 dark:text-gray-400">Date & Time</span>
-            <span className="font-medium">{consultation.date} at {consultation.time}</span>
+            <span className="font-medium">
+              {consultation.slotId?.split('_')[0] || 'TBD'} at {consultation.slotId?.split('_')[1] || 'TBD'}
+            </span>
           </div>
           <div className="flex justify-between py-4 text-xl font-bold">
             <span>Total</span>

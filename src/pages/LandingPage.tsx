@@ -16,7 +16,7 @@ export const LandingPage = () => {
   
   const [step, setStep] = useState<Step>('duration');
   const [sessionType, setSessionType] = useState<'regular' | 'emergency' | null>(null);
-  const [datetime, setDatetime] = useState<{date: string, time: string} | null>(null);
+  const [datetime, setDatetime] = useState<{slotId: string, timeString: string} | null>(null);
   
   // Form details
   const [name, setName] = useState(user?.name || '');
@@ -30,8 +30,8 @@ export const LandingPage = () => {
     setStep('datetime');
   };
 
-  const handleDateTimeSelect = (date: string, time: string) => {
-    setDatetime({ date, time });
+  const handleDateTimeSelect = (slotId: string, timeString: string) => {
+    setDatetime({ slotId, timeString });
     setStep('details');
   };
 
@@ -51,8 +51,7 @@ export const LandingPage = () => {
     const id = await bookConsultation({
       type: sessionType,
       duration: 1,
-      date: datetime.date,
-      time: datetime.time,
+      slotId: datetime.slotId,
       name,
       email,
       needs,
@@ -131,7 +130,7 @@ export const LandingPage = () => {
             </button>
             <form onSubmit={handleSubmit} className="glass-panel p-8 rounded-3xl flex flex-col gap-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Almost there!</h2>
-              <p className="text-gray-500 text-sm">You selected an <strong>{sessionType === 'emergency' ? 'Emergency' : 'Regular'} Consultation</strong> on {datetime?.date} at {datetime?.time}.</p>
+              <p className="text-gray-500 text-sm">You selected an <strong>{sessionType === 'emergency' ? 'Emergency' : 'Regular'} Consultation</strong> on {datetime?.slotId?.split('_')[0]} at {datetime?.timeString}.</p>
               
               <div>
                 <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Name</label>

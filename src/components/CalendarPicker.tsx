@@ -8,10 +8,8 @@ interface CalendarPickerProps {
   minDate?: Date;
 }
 
-const mockTimeSlots = ['09:00 AM', '10:00 AM', '11:00 AM', '01:00 PM', '02:00 PM', '03:30 PM', '04:00 PM'];
-
 export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onSelect, minDate }) => {
-  const { blockedDates } = useScheduling();
+  const { slots } = useScheduling();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -66,8 +64,13 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onSelect, minDat
       for (let i = 0; i < 7; i++) {
         formattedDate = format(day, "d");
         const cloneDay = day;
-        const isBlocked = blockedDates.includes(format(day, 'yyyy-MM-dd'));
-        const isDisabled = isBefore(day, effectiveMinDate) || isBlocked;
+        const dateString = format(day, 'yyyy-MM-dd');
+        
+        // Check if there are any available slots for this day
+        const daySlots = slots.filter(s => s.date === dateString && !s.booked);
+        const hasAvailability = daySlots.length > 0;
+        
+        const isDisabled = isBefore(day, effectiveMinDate) || !hasAvailability;
         const isSelected = selectedDate ? isSameDay(day, selectedDate) : false;
         
         days.push(
@@ -104,15 +107,20 @@ export const CalendarPicker: React.FC<CalendarPickerProps> = ({ onSelect, minDat
           Available exactly on {format(selectedDate, 'MMM do')}
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {mockTimeSlots.map((time, idx) => (
-            <button
-              key={idx}
-              onClick={() => onSelect(format(selectedDate, 'yyyy-MM-dd'), time)}
-              className="py-3 px-4 rounded-xl border border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400 font-medium text-sm hover:bg-hot-pink-gradient hover:text-white hover:border-transparent transition-all hover:shadow-md"
-            >
-              {time}
-            </button>
-          ))}
+          {slots
+            .filter(s => s.date === format(selectedDate, 'yyyy-MM-dd') && !s.booked)
+            .map((slot) => {
+              const time = format(new Date(slot.startTime), 'hh:mm a');
+              return (
+                <button
+                  key={slot.id}
+                  onClick={() => onSelect(slot.id, time)}
+                  className="py-3 px-4 rounded-xl border border-pink-200 dark:border-pink-800 text-pink-600 dark:text-pink-400 font-medium text-sm hover:bg-hot-pink-gradient hover:text-white hover:border-transparent transition-all hover:shadow-md"
+                >
+                  {time}
+                </button>
+              );
+            })}
         </div>
       </div>
     );

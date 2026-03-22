@@ -1,14 +1,47 @@
-import { useScheduling } from '../../context/SchedulingContext';
-import { useAuth } from '../../context/AuthContext';
+import { useState, useEffect } from 'react';
+import { db } from '../../firebase';
+import { collection, collectionGroup, onSnapshot } from 'firebase/firestore';
 import { DollarSign, Activity, Users as UsersIcon } from 'lucide-react';
+import type { Payment } from '../../context/SchedulingContext';
 
 export const PaymentsDashboardPage = () => {
-  const { payments, consultations } = useScheduling();
-  const { clients } = useAuth();
-  
-  const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
-  const activeClients = clients.length;
-  const totalSessions = consultations.length;
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [activeClients, setActiveClients] = useState(0);
+
+  useEffect(() => {
+    const unsubPayments = onSnapshot(collectionGroup(db, 'payments'), (snapshot) => {
+      const p: Payment[] = [];
+      let rev = 0;
+      snapshot.forEach(doc => {
+        const data = doc.data() as Omit<Payment, 'id'>;
+        if (data.status === 'Completed') rev += data.amount || 0;
+        p.push({ id: doc.id, ...data } as Payment);
+      });
+      p.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      setPayments(p);
+      setTotalRevenue(rev);
+    });
+
+    const unsubSessions = onSnapshot(collectionGroup(db, 'bookings'), (snapshot) => {
+      setTotalSessions(snapshot.size);
+    });
+
+    const unsubClients = onSnapshot(collection(db, 'users'), (snapshot) => {
+      let count = 0;
+      snapshot.forEach(doc => {
+        if (doc.data().role !== 'admin') count++;
+      });
+      setActiveClients(count);
+    });
+
+    return () => {
+      unsubPayments();
+      unsubSessions();
+      unsubClients();
+    };
+  }, []);
 
   return (
     <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-8 animate-in fade-in">
@@ -82,6 +115,11 @@ export const PaymentsDashboardPage = () => {
                   <td className="py-4 px-4 text-right font-mono text-xs text-gray-400">#{payment.id.toUpperCase()}</td>
                 </tr>
               ))}
+              {payments.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-gray-500">No payment records found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
