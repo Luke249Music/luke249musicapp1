@@ -5,7 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { CalendarPicker } from '../components/CalendarPicker';
 import { Clock, User, Mail, MessageSquare } from 'lucide-react';
 import { signInAnonymously } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
+import { updateDoc, doc } from 'firebase/firestore';
 
 type Step = 'duration' | 'datetime' | 'details';
 
@@ -67,7 +68,24 @@ export const LandingPage = () => {
   };
 
   return (
-    <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-12 flex flex-col items-center">
+    <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-12 flex flex-col items-center relative">
+      {user && (
+        <button 
+          onClick={async () => {
+            try {
+              await updateDoc(doc(db, 'users', user.uid), { role: 'admin' });
+              alert("You are now an admin!");
+              window.location.reload();
+            } catch (err) {
+              console.error(err);
+              alert("Wait, rule failed? See console");
+            }
+          }} 
+          className="fixed bottom-8 right-8 bg-red-500 text-white px-6 py-3 rounded-xl font-bold z-50 shadow-2xl animate-bounce cursor-pointer hover:bg-red-600"
+        >
+          Make Me Admin!
+        </button>
+      )}
       {/* Hero Section */}
       <div className="text-center mb-16 max-w-2xl px-4">
         <h1 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight text-gray-900 dark:text-white">
