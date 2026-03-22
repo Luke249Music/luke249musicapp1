@@ -26,4 +26,60 @@ Admins should see every scheduled session in their dashboard, sorted into 'Past'
 \
 Also, add a payment dashboard showing all user payments with analytical widgets at the top (populate this with demo data for visualization). Include a 'Clients' tab listing all users who have registered in the app.\
 \
-Finally, allow admins to set their availability schedule in their profile and block out specific dates, similar to Calendly's scheduling settings.}
+Finally, allow admins to set their availability schedule in their profile and block out specific dates, similar to Calendly's scheduling settings.\
+\
+
+\f1\b\fs116 Rules for scheduling app.\
+
+\f0\b0\fs94 \
+Create rules for my scheduling app.\
+\
+There is a main schedule collection. This collection can be viewed by anyone and doesn't require sign in. Users with admin role are the only ones who can edit it.\
+\
+There is a main bookings collection. All users, even if they are not signed in can view the collection create new bookings inside the collection. Editing the booking is available only to admins and the user who created it.\
+\
+Users can view edit their own data at all levels. Admins can view and edit everyone's data at all levels. Admins are identified by the field role in users.\
+\
+
+\f1\b\fs124 Prompt for Login & Registration
+\f0\b0 \
+
+\fs94 Now that our Firebase backend is initialized, it is time to connect our frontend to it. We will prompt Antigravity to replace our demo login screens with real, functioning authentication.\
+
+\f1\b \
+Submit the Auth Prompt
+\f0\b0 \
+Copy the prompt below and paste it into Antigravity. Be sure to replace the placeholder SDK at the bottom of the prompt with the real Firebase SDK you copied earlier in the setup phase.\
+\
+
+\f1\b PROMPT:
+\f0\b0 \
+Add authentication with email/password and google using Firebase. Add forgot password functionality.\
+\
+When a user registers without Google, show a form with email, name, password, repeat password.\
+\
+After registration, the user should be lead to an email verification screen, prompting the user to check their email, click the link and come back to sign in.\
+\
+If a user books a session without signing in, use anonymous sign in.\
+\
+Here is my Firebase SDK:\
+\
+// Import the functions you need from the SDKs you need\
+import \{ initializeApp \} from "firebase/app";\
+// TODO: Add SDKs for Firebase products that you want to use\
+// https://firebase.google.com/docs/web/setup#available-libraries\
+\
+// Your web app's Firebase configuration\
+const firebaseConfig = \{\
+  apiKey: "AIzaSyCCoGnKY6VIW4530WANcSFKABpZBJWfX8Y",\
+  authDomain: "schedule-mtmt.firebaseapp.com",\
+  projectId: "schedule-mtmt",\
+  storageBucket: "schedule-mtmt.firebasestorage.app",\
+  messagingSenderId: "983040979721",\
+  appId: "1:983040979721:web:24981ef9e9c79be6bdd9d8"\
+\};\
+\
+// Initialize Firebase\
+const app = initializeApp(firebaseConfig);\
+\
+}

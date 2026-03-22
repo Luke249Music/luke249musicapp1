@@ -1,14 +1,9 @@
-
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { CheckCircle2, LayoutDashboard, UserPlus, LogIn } from 'lucide-react';
 
 export const SuccessPage = () => {
-  const { user, login } = useAuth();
-
-  const handleDemoLogin = () => {
-    login('Demo User', 'demo@example.com');
-  };
+  const { user } = useAuth();
 
   return (
     <div className="flex-1 max-w-3xl mx-auto w-full px-4 py-20 flex flex-col items-center justify-center">
@@ -23,7 +18,7 @@ export const SuccessPage = () => {
         Your consultation request has been received and is pending admin approval. You will receive an email shortly once it is confirmed.
       </p>
 
-      {user ? (
+      {user && !user.isAnonymous ? (
         <Link to="/dashboard" className="glass-panel hover:bg-white dark:hover:bg-gray-800 transition-colors p-6 rounded-2xl flex items-center gap-4 w-full max-w-sm group">
           <div className="bg-pink-100 dark:bg-pink-900/40 p-3 rounded-xl group-hover:bg-hot-pink-gradient transition-colors">
             <LayoutDashboard className="w-6 h-6 text-pink-500 group-hover:text-white" />
@@ -35,21 +30,21 @@ export const SuccessPage = () => {
         </Link>
       ) : (
         <div className="grid sm:grid-cols-2 gap-4 w-full max-w-lg">
-          <button onClick={handleDemoLogin} className="glass-panel hover:bg-white dark:hover:bg-gray-800 transition-colors p-6 rounded-2xl flex flex-col items-center text-center group cursor-pointer">
+          <Link to="/register" className="glass-panel hover:bg-white dark:hover:bg-gray-800 transition-colors p-6 rounded-2xl flex flex-col items-center text-center group cursor-pointer block">
             <div className="bg-pink-100 dark:bg-pink-900/40 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
               <UserPlus className="w-6 h-6 text-pink-500" />
             </div>
             <h3 className="font-bold mb-1">Create Account</h3>
             <p className="text-sm text-gray-500">Save details for next time</p>
-          </button>
+          </Link>
           
-          <button onClick={handleDemoLogin} className="glass-panel hover:bg-white dark:hover:bg-gray-800 transition-colors p-6 rounded-2xl flex flex-col items-center text-center group cursor-pointer">
+          <Link to="/login" className="glass-panel hover:bg-white dark:hover:bg-gray-800 transition-colors p-6 rounded-2xl flex flex-col items-center text-center group cursor-pointer block">
             <div className="bg-purple-100 dark:bg-purple-900/40 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
               <LogIn className="w-6 h-6 text-purple-500" />
             </div>
             <h3 className="font-bold mb-1">Login Status</h3>
             <p className="text-sm text-gray-500">Already have an account?</p>
-          </button>
+          </Link>
         </div>
       )}
     </div>

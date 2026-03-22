@@ -12,6 +12,10 @@ import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { PaymentsDashboardPage } from './pages/admin/PaymentsDashboardPage';
 import { ClientsPage } from './pages/admin/ClientsPage';
 import { AvailabilityPage } from './pages/admin/AvailabilityPage';
+import { LoginPage } from './pages/auth/LoginPage';
+import { RegisterPage } from './pages/auth/RegisterPage';
+import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
+import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 
 function App() {
   return (
@@ -24,6 +28,10 @@ function App() {
             <main className="flex-1 flex flex-col mt-20">
               <Routes>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/verify-email" element={<VerifyEmailPage />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/success" element={<SuccessPage />} />

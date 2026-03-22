@@ -4,6 +4,8 @@ import { useScheduling } from '../context/SchedulingContext';
 import { useAuth } from '../context/AuthContext';
 import { CalendarPicker } from '../components/CalendarPicker';
 import { Clock, User, Mail, MessageSquare } from 'lucide-react';
+import { signInAnonymously } from 'firebase/auth';
+import { auth } from '../firebase';
 
 type Step = 'duration' | 'datetime' | 'details';
 
@@ -33,10 +35,18 @@ export const LandingPage = () => {
     setStep('details');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sessionType || !datetime) return;
     
+    if (!user) {
+      try {
+        await signInAnonymously(auth);
+      } catch (err) {
+        console.error('Failed to sign in anonymously:', err);
+      }
+    }
+
     // Create consultation via context
     const id = bookConsultation({
       type: sessionType,

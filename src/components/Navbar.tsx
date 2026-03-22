@@ -5,25 +5,12 @@ import { useTheme } from '../context/ThemeContext';
 import { CalendarDays, LogIn, LogOut, LayoutDashboard, Sun, Moon, CreditCard, Users } from 'lucide-react';
 
 export const Navbar = () => {
-  const { user, login, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const handleDemoLogin = () => {
-    const email = window.prompt('Enter your email to login (use spenser12@gmail.com for Admin Access):', 'demo@example.com');
-    if (!email) return;
-
-    if (email.toLowerCase() === 'spenser12@gmail.com') {
-      login('System Admin', email);
-      navigate('/admin');
-    } else {
-      login('Demo User', email);
-      navigate('/dashboard');
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
@@ -42,7 +29,7 @@ export const Navbar = () => {
             <button onClick={toggleTheme} className="p-2 mr-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors cursor-pointer">
               {theme === 'dark' ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-gray-600 dark:text-gray-300" />}
             </button>
-            {user ? (
+            {user && !user.isAnonymous ? (
               <>
                 {user.role === 'admin' ? (
                   <>
@@ -69,20 +56,20 @@ export const Navbar = () => {
                     <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-2"></div>
                   </>
                 )}
-                <button onClick={handleLogout} className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-pink-500 transition-colors">
+                <button onClick={handleLogout} className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-pink-500 transition-colors cursor-pointer">
                   <LogOut className="w-4 h-4" />
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <button onClick={handleDemoLogin} className="flex items-center gap-2 text-sm font-medium hover:text-pink-500 transition-colors">
+                <Link to="/login" className="flex items-center gap-2 text-sm font-medium hover:text-pink-500 transition-colors">
                   <LogIn className="w-4 h-4" />
                   Login
-                </button>
-                <button onClick={handleDemoLogin} className="bg-hot-pink-gradient text-white px-5 py-2.5 rounded-full text-sm font-medium hover:brightness-110 transition-all shadow-md hover:shadow-lg">
+                </Link>
+                <Link to="/register" className="bg-hot-pink-gradient text-white px-5 py-2.5 rounded-full text-sm font-medium hover:brightness-110 transition-all shadow-md hover:shadow-lg">
                   Register
-                </button>
+                </Link>
               </>
             )}
           </nav>

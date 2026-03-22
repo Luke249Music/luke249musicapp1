@@ -1,12 +1,21 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { 
+  onAuthStateChanged, 
+  signOut
+} from 'firebase/auth';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { auth } from '../firebase';
 
 export type Role = 'user' | 'admin';
 
 export type User = {
+  uid: string;
   name: string;
   email: string;
   role: Role;
+  emailVerified: boolean;
+  isAnonymous: boolean;
 };
 
 export type Client = {
@@ -20,9 +29,9 @@ export type Client = {
 
 interface AuthContextType {
   user: User | null;
+  loading: boolean;
   clients: Client[];
-  login: (name: string, email: string) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   addClient: (name: string, email: string) => void;
   updateClient: (id: string, name: string, email: string) => void;
   deleteClient: (id: string) => void;
@@ -40,20 +49,37 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [clients, setClients] = useState<Client[]>(mockClients);
 
-  const login = (name: string, email: string) => {
-    const client = clients.find(c => c.email.toLowerCase() === email.toLowerCase());
-    if (client && client.status === 'revoked') {
-      alert('Your access has been revoked. Please contact support.');
-      return;
-    }
-    const role = email.toLowerCase() === 'spenser12@gmail.com' ? 'admin' : 'user';
-    setUser({ name, email, role });
-  };
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        // Mock admin check
+        const role = firebaseUser.email?.toLowerCase() === 'spenser12@gmail.com' ? 'admin' : 'user';
+        setUser({
+          uid: firebaseUser.uid,
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Anonymous',
+          email: firebaseUser.email || '',
+          role,
+          emailVerified: firebaseUser.emailVerified,
+          isAnonymous: firebaseUser.isAnonymous
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
 
-  const logout = () => {
-    setUser(null);
+    return () => unsubscribe();
+  }, []);
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const addClient = (name: string, email: string) => {
@@ -81,8 +107,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, clients, login, logout, addClient, updateClient, deleteClient, toggleClientStatus }}>
-      {children}
+    <AuthContext.Provider value={{ user, loading, clients, logout, addClient, updateClient, deleteClient, toggleClientStatus }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };
