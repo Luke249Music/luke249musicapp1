@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- HELPER FUNCTIONS ---
+    
+    // Check if the user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Check if the signed-in user has an 'admin' role in their user document
+    function isAdmin() {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Check if the document belongs to the current user
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- RULES ---
+
+    // 1. Schedule Collection: Publicly readable, Admin editable
+    match /schedule/{itemId} {
+      allow read: if true; 
+      allow write: if isAdmin();
+    }
+
+    // 2. Bookings Collection: Publicly readable/creatable, Owner or Admin editable
+    match /bookings/{bookingId} {
+      allow read, create: if true; 
+      
+      // Update/Delete requires being the creator OR an admin
+      // Note: This assumes you store 'createdBy' (UID) in the booking document
+      allow update, delete: if isAdmin() || 
+        (isSignedIn() && request.resource.data.createdBy == request.auth.uid);
+    }
+
+    // 3. Users Collection: Users manage their own data, Admins manage all
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+      
+      // Pro-tip: Prevent non-admins from promoting themselves to admin
+      allow create: if isSignedIn() && request.resource.data.role != 'admin';
+    }
+  }
+}

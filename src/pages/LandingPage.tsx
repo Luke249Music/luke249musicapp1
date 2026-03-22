@@ -48,7 +48,7 @@ export const LandingPage = () => {
     }
 
     // Create consultation via context
-    const id = bookConsultation({
+    const id = await bookConsultation({
       type: sessionType,
       duration: 1,
       date: datetime.date,

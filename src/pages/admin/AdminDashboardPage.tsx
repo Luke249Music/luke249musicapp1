@@ -22,12 +22,12 @@ export const AdminDashboardPage = () => {
     else setEmailBody(`Hi ${session.name},\n\nYour appointment details have been updated.\n\nBest,\nAdmin`);
   };
 
-  const handleActionConfirm = (e: React.FormEvent) => {
+  const handleActionConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!actionModal.session) return;
-    if (actionModal.type === 'approve') approveConsultation(actionModal.session.id, emailBody);
-    else if (actionModal.type === 'reject') rejectConsultation(actionModal.session.id, emailBody);
-    else if (actionModal.type === 'update') updateConsultation(actionModal.session.id, editSession, emailBody);
+    if (actionModal.type === 'approve') await approveConsultation(actionModal.session.id, emailBody);
+    else if (actionModal.type === 'reject') await rejectConsultation(actionModal.session.id, emailBody);
+    else if (actionModal.type === 'update') await updateConsultation(actionModal.session.id, editSession, emailBody);
     setActionModal({ session: null, type: null });
   };
 
@@ -41,9 +41,9 @@ export const AdminDashboardPage = () => {
   const today = consultations.filter(c => isToday(parseDate(c.date)));
   const allUpcoming = [...today, ...upcoming];
 
-  const handleCreateFreeEvent = (e: React.FormEvent) => {
+  const handleCreateFreeEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    bookConsultation({
+    await bookConsultation({
       type: manualSession.type,
       duration: 1, // Defaulting to 1h for manual events
       date: manualSession.date || format(new Date(), 'yyyy-MM-dd'),

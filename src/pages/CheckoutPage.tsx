@@ -19,10 +19,10 @@ export const CheckoutPage = () => {
 
   const handlePayPalCheckout = () => {
     setIsProcessing(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsProcessing(false);
       setIsSuccess(true);
-      confirmPayment(consultation.id);
+      await confirmPayment(consultation.id);
       // Wait to show success message before redirecting
       setTimeout(() => {
         navigate('/success');
